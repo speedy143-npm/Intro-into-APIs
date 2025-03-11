@@ -1,67 +1,75 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
+
 	"time"
 
-	"github.com/joho/godotenv"
+	"iknite-api/httpRequests"
 
-	"log"
-	"net/http"
+	"github.com/joho/godotenv"
 )
 
+// Storing RequestPayment and CheckPaymentStatus requests on struct
+type Requests struct {
+	RequestPayment     string
+	CheckPaymentStatus string
+	BaseUrl            string `json:"https://demo.campay.net"`
+	ApiKey             string
+}
+
 // Struct types to hold output
-type Transreq struct {
+type Transrequest struct {
 	From        string `json:"from"`
 	Amount      string `json:"amount"`
 	Description string `json:"description"`
 	Reference   string `json:"external_reference"`
 }
 
-type Transrep struct {
+type Transresponse struct {
 	Reference string `json:"reference"`
 	//Status    string `json:"status"`
 	Ussd_code string `json:"ussd_code"`
 	Operator  string `json:"operator"`
 }
 
-type State struct {
-	Reference string `json:"reference"`
-	Ext_ref   string `json:"external_reference"`
-	Status    string `json:"status"`
-	// "amount"
-	// "currency"
-	// "operator"
-	// "code"
-	// "operator_reference"
-	// "description"
-	// "external_user"
-	// "reason"
-	// "phone_number"
+type Status struct {
+	Reference          string `json:"reference"`
+	Ext_ref            string `json:"external_reference"`
+	Status             string `json:"status"`
+	Amount             string `json:"amount"`
+	Currency           string `json:"currency"`
+	Operator           string `json:"operator"`
+	Code               string `json:"code"`
+	Operator_Reference string `json:"operator_reference"`
+	Description        string `json:"description"`
+	Exterbal_User      string `json:"external_user"`
+	Reason             string `json:"reason"`
+	Phone_Number       string `json:"phone_number"`
 }
 
 func main() {
+	x := httpRequests.Add(1, 2)
+	fmt.Println(x)
 	var number string
 	var amount string
 	var description, ref string
 
 	apikey, err := run()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("API KEY could not be found\n", err)
 		os.Exit(1)
 	}
+
 	// Requesting inputs from user
 	for {
 		fmt.Println("Enter your mobile money number without country code")
 		fmt.Scanln(&number)
-		if isValidnumber(number) {
+		if httpRequests.IsValidnumber(number) {
 			break
 		}
-		fmt.Println("Invalid phone number. Please enter a valid phone number starting with 675, 673, 651, 678 or 677 followed by exactly 6 other numbers.")
+		fmt.Println("Invalid phone number. Please enter a valid phone number starting with 675, 673, 651, 653, 680, 678 or 677 followed by exactly 6 other numbers.")
 	}
 
 	number = "237" + number
@@ -75,21 +83,15 @@ func main() {
 	fmt.Println("Enter Reference")
 	fmt.Scanln(&ref)
 
-	trans := post(apikey, number, amount, description, ref)
+	trans := httpRequests.RequestPayment(apikey, number, amount, description, ref)
 	fmt.Printf("Transaction Reference: %s\nTransaction Code: %s\n", trans.Reference, trans.Ussd_code)
 
 	//waiting time before checking transaction status
 	time.Sleep(30 * time.Second)
 
-	state := get(apikey, trans.Reference)
+	state := httpRequests.CheckPaymentStatus(apikey, trans.Reference)
 	fmt.Printf("Status: %s\n", state.Status)
 
-}
-
-// Function to validate phone number
-func isValidnumber(number string) bool {
-	re := regexp.MustCompile(`^(675|673|651|677|678)\d{6}$`)
-	return re.MatchString(number)
 }
 
 // loading the API KEY from .env file
@@ -107,70 +109,5 @@ func run() (string, error) {
 	}
 
 	return apiKey, nil
-
-}
-
-// Initiating mobile money withdrawal
-func post(apik string, number string, amount string, description string, ref string) Transrep {
-
-	client := &http.Client{}
-
-	transreq := Transreq{
-		From:        number,
-		Amount:      amount,
-		Description: description,
-		Reference:   ref,
-	}
-
-	reqBody, _ := json.Marshal(transreq)
-
-	req, err := http.NewRequest("POST", "https://demo.campay.net/api/collect/", bytes.NewBuffer(reqBody))
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Token %s", apik))
-	req.Header.Add("Content-Type", "application/json")
-
-	response, err := client.Do(req)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer response.Body.Close()
-
-	var transaction Transrep
-	json.NewDecoder(response.Body).Decode(&transaction)
-	return transaction
-
-}
-
-// Initiating request to get the status of the transaction
-func get(apik, reference string) State {
-	client := &http.Client{}
-
-	url := fmt.Sprintf("https://demo.campay.net/api/transaction/%s", reference)
-
-	req, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Token %s", apik))
-	req.Header.Add("Content-Type", "application/json")
-
-	response, err := client.Do(req)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer response.Body.Close()
-
-	var checkState State
-	json.NewDecoder(response.Body).Decode((&checkState))
-	return checkState
 
 }
