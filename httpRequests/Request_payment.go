@@ -9,6 +9,7 @@ import (
 	"regexp"
 )
 
+// Struct types to hold input
 type Transrequest struct {
 	From        string `json:"from"`
 	Amount      string `json:"amount"`
@@ -16,6 +17,7 @@ type Transrequest struct {
 	Reference   string `json:"external_reference"`
 }
 
+// Struct types to hold output
 type Transresponse struct {
 	Reference string `json:"reference"`
 	//Status    string `json:"status"`

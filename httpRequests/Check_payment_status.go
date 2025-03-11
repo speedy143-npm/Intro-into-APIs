@@ -7,6 +7,7 @@ import (
 	"net/http"
 )
 
+// struct type to hold output
 type Status struct {
 	Reference          string `json:"reference"`
 	Ext_ref            string `json:"external_reference"`
