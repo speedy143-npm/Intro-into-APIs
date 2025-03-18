@@ -53,7 +53,3 @@ func CheckPaymentStatus(apik, reference string) Status {
 	return checkState
 
 }
-
-func Add(x, y int) int {
-	return x + y
-}

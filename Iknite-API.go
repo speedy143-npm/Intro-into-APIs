@@ -12,8 +12,6 @@ import (
 )
 
 func main() {
-	x := httpRequests.Add(1, 2)
-	fmt.Println(x)
 	var number string
 	var amount string
 	var description, ref string
@@ -25,25 +23,6 @@ func main() {
 	}
 
 	// Requesting inputs from user
-	for {
-		fmt.Println("Enter your mobile money number without country code")
-		fmt.Scanln(&number)
-		if httpRequests.IsValidnumber(number) {
-			break
-		}
-		fmt.Println("Invalid phone number. Please enter a valid phone number starting with 675, 673, 651, 653, 680, 678 or 677 followed by exactly 6 other numbers.")
-	}
-
-	number = "237" + number
-
-	fmt.Println("Enter amount")
-	fmt.Scanln(&amount)
-
-	fmt.Println("Enter description")
-	fmt.Scanln(&description)
-
-	fmt.Println("Enter Reference")
-	fmt.Scanln(&ref)
 
 	trans := httpRequests.RequestPayment(apikey, number, amount, description, ref)
 	fmt.Printf("Transaction Reference: %s\nTransaction Code: %s\n", trans.Reference, trans.Ussd_code)
